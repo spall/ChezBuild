@@ -1,0 +1,9 @@
+resolver: nightly-2020-02-23
+packages:
+- .
+
+extra-deps:
+  - git: https://github.com/ndmitchell/shake.git
+    commit: 79a098c55f62de9efd851546435945b7f7f9b9df
+  - git: https://github.com/spall/rattle.git
+    commit: 4400c1ac941f3dc43c953c1dc8d5aa1a2085cb36
