@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# Language ScopedTypeVariables #-}
 
 module Mach where
 
@@ -20,16 +20,18 @@ data Platform = I3 | A6 | ARM32 | ARM64 | PPC32 deriving (Eq, Show, Read)
 data Mach = Mach { threaded :: Bool -- is the system threaded or not
                  , platform :: Platform -- the hardware platform
                  , system :: System } -- the operating system
-          | PB deriving (Eq, Show, Read)
+          | PB | TPB deriving (Eq, Show, Read)
 
 showMach :: Mach -> String
 showMach PB = "pb"
+showMach TPB = "tpb"
 showMach (Mach True p s) = "t" ++ (map toLower $ show p) ++ (map toLower $ show s)
 showMach (Mach False p s) = (map toLower $ show p) ++ (map toLower $ show s)
 
 parseMach :: Parsec String () Mach
-parseMach = pPB <|> pT <|> pF
+parseMach = try pTPB <|> try pPB <|> pT <|> pF
     where pPB = string "pb" *> eof *> pure PB
+          pTPB = string "tpb" *> eof *> pure TPB
           pPlat = choice [string "i3" *> pure I3, string "a6" *> pure A6
                          ,string "arm32" *> pure ARM32, string "arm64" *> pure ARM64
                          ,string "ppc32" *> pure PPC32]
@@ -63,6 +65,7 @@ testReadMach = do
 
 getCpu :: Mach -> CPU
 getCpu PB = PORTABLE_BYTECODE
+getCpu TPB = PORTABLE_BYTECODE
 getCpu (Mach _ A6 _) = X86_64
 getCpu (Mach _ I3 _) = I386
 getCpu (Mach _ ARM32 _) = ARMV6
@@ -151,4 +154,5 @@ getArchincludes (Mach _ ARM64 _) = ["arm64.ss"]
 getArchincludes (Mach _ I3 _) = ["x86.ss"]
 getArchincludes (Mach _ PPC32 _) = ["ppc32.ss"]
 getArchincludes PB = ["pb.ss"]
+getArchincludes TPB = ["pb.ss"]
 getArchincludes _ = []

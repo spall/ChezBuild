@@ -31,7 +31,7 @@ kernelLib m = "../boot" </> m </> "libkernel.a"
 kernelsrc = ["statics.c", "segment.c", "alloc.c", "symbol.c", "intern.c", "gcwrapper.c", "gc-011.c", "gc-par.c", "gc-ocd.c"
             ,"gc-oce.c", "number.c", "schsig.c", "io.c", "new-io.c", "print.c", "fasl.c", "vfasl.c"
             ,"stats.c", "foreign.c", "prim.c", "prim5.c", "flushcache.c", "schlib.c", "thread.c"
-            ,"expeditor.c", "scheme.c", "compress-io.c", "random.c"]
+            ,"expeditor.c", "scheme.c", "compress-io.c", "random.c", "ffi.c"]
 
 kernelObj o mdobj = mdobj ++ map (-<.> o) kernelsrc
 

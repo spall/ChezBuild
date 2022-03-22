@@ -51,11 +51,16 @@ data ConfigArgs = ConfigArgs
   ,installzLibTarget :: Bool -- x
   ,installlz4Target :: Bool -- x
   ,bits :: BITS -- x
+  ,libffi :: Bool
   }
 
   -----------------------------------------------------------------------------------------
 
   -- the flags
+libffiFlag :: Flag ConfigArgs
+libffiFlag = flagNone ["enable-libffi"] update "enable libffi support for pb"
+  where update config = config{libffi = True}
+  
 mFlag :: [String] -> Flag ConfigArgs
 mFlag machs = flagReq ["m", "machine"] update "machine type" "explicitly specify machine type"
   where update val config = if elem val machs
@@ -77,8 +82,8 @@ bitsFlag = flagReq ["bits"] update "64 | 32" "specify 32/64-bit version"
         update _ config = Left "choose either 32 or 64 bits"
 
 pbFlag :: Flag ConfigArgs
-pbFlag = flagNone ["pb"] update "use to select a portable bytecode build"
-  where update config = config{pb = True}
+pbFlag = flagNone ["pb"] update "specify pb (portable bytecode) version"
+  where update config = config{pb = True, threads = False}
 
 installPrefixFlag :: Flag ConfigArgs
 installPrefixFlag = flagReq ["installprefix"] update "pathname" "final installation root"
@@ -227,4 +232,4 @@ cargs machs ic = (modeEmpty ic)
                                      ,disableCursesFlag, disableIConvFlag, disableAutoFlagsFlag, enableWarningFlagsFlag, libKernelFlag, kernelObjFlag, ccFlag
                                      ,cppFlagsFlag, cFlagsFlag, ldFlag, ldFlagsFlag, arFlag
                                      ,arFlagsFlag, ranLibFlag, windresFlag, zLibFlag, lz4Flag
-                                     ,flagHelpSimple id]}
+                                     ,flagHelpSimple id, libffiFlag]}
