@@ -271,7 +271,6 @@ initConfig = do
   -- mdlinkflags
   let mdlinkFlags = case flagsm of
                       Just (Mach _ I3 QNX) -> ["-Wl,--export-dynamic"]
-                      Just (Mach _ PPC32 LE) -> ["-rdynamic"]
                       _ -> []
 
   let mdldFlags = maybe [] getmdldFlags flagsm
