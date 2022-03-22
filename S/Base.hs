@@ -50,7 +50,7 @@ macroobj = ["cmacros.so", "priminfo.so", "primvars.so", "env.so", "setup.so"]
 patchobj = ["patch.patch", "cpnanopass.patch", "cpprim.patch", "cprep.patch", "cpcheck.patch"
            ,"cp0.patch", "cpvalid.patch", "cptypes.patch", "cpcommonize.patch", "cpletrec.patch"
            ,"reloc.patch", "compile.patch", "fasl.patch", "vfasl.patch", "syntax.patch", "env.patch"
-           ,"read.patch", "interpret.patch", "ftype.patch", "strip.patch", "ubify.patch"]
+           ,"read.patch", "interpret.patch", "ftype.patch", "strip.patch", "ubify.patch", "back.patch"]
 
 
 src = basesrc ++ compilersrc
