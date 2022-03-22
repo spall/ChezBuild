@@ -376,7 +376,7 @@ submodInstructions :: String -> IO ()
 submodInstructions msg = do
   putStrLn $ msg ++ "; check out Git submodules using"
   putStrLn "git submodule init"
-  putStrLn "git submodule update"
+  putStrLn "git submodule update --depth 1"
   die ""
 
 configure :: Run Config
