@@ -113,6 +113,7 @@ initConfig = do
       installzLibTarget = True
       installlz4Target = True
       srcdir = "."
+      libffi = False
       
   let defaultWarningFlags = ["-Wpointer-arith", "-Wall", "-Wextra", "-Wno-implicit-fallthrough"]
   
@@ -133,7 +134,9 @@ initConfig = do
   let defaultM = if bits == BITS64
                  then if threads then tm64 else m64
                  else if threads then tm32 else m32
- 
+  when (m == Just TPB) $
+    liftIO $ die "Don't select tpb using -m or --machine, because tpb needs the machine as the kernel host machine.  Instead, use --pb plus --threads to select a tpb (threaded portable bytecode) build."
+  
   when (m == Just PB) $
     liftIO $ die "Don't select pb using -m or --machine, becasue pb needs the machine as the kernel host machine. Instead, use --pb to select a pb (portable bytecode) build."
   
@@ -145,11 +148,11 @@ initConfig = do
   let (m2 , mpbhost , flagsm) = case m of
                                     Nothing -> if pb
                                                then let tmp = if bits == BITS64 then m64 else m32 in
-                                                      (Just PB , tmp , tmp)
+                                                      (if threads then Just TPB else Just PB , tmp , tmp)
                                            
                                                else (defaultM , Nothing , defaultM) -- m = defaultm flagsm = m
                                     x -> if pb
-                                              then (Just PB, x , x)
+                                              then (if threads then Just TPB else Just PB, x , x)
                                               else (x, Nothing, x)
 
   let mstr = maybe "" showMach m2
@@ -292,11 +295,13 @@ initConfig = do
     ++ "\n #endif"                                                                
 
   when disableCurses $ 
-    liftIO $ appendFile (workArea </> "c/next_config.h") "define DISABLE_CURSES"
+    liftIO $ appendFile (w </> "c/next_config.h") "define DISABLE_CURSES"
 
   return $ when disableX11 $ 
     appendFile (w </> "c/next_config.h") "define DISABLE_X11"
 
+  when (pb && libffi) $
+    liftIO $ appendFile (w </> "c/next_config.h") "define ENABLE_LIBFFI"
 
   liftIO $ renameFile (w </> "c/next_config.h") (w </> "c/config.h")
 
