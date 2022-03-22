@@ -245,7 +245,7 @@ initConfig = do
                  else ldFlags
 
   let libs2 = if addFlags
-              then libs ++ (maybe [] (getLibsFlags iconvLib ncursesLib cursesLib disableCurses) flagsm)
+              then libs ++ (maybe [] (getLibsFlags iconvLib ncursesLib cursesLib disableIConv) flagsm)
               else libs
 
   let libs3 = if addFlags then libs2 ++ threadLibs else libs2
