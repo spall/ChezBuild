@@ -16,7 +16,7 @@ include m = "../boot" </> m -- </> "tmp"
 petiteBoot m = "../boot" </> m </> "petite.boot"
 schemeBoot m = "../boot" </> m </> "scheme.boot"
 main m o = "../boot" </> m </> "main" <.> o
-scheme m = "../bin" </> m </> "scheme"
+scheme m exeSuffix = "../bin" </> m </> "scheme" ++ exeSuffix
 
 -- # One of these sets is referenced in Mf-config to select between
 -- # linking with kernel.o or libkernel.a
@@ -36,7 +36,7 @@ kernelsrc = ["statics.c", "segment.c", "alloc.c", "symbol.c", "intern.c", "gcwra
 kernelObj o mdobj = mdobj ++ map (-<.> o) kernelsrc
 
 kernelHdr = ["system.h", "types.h", "version.h", "globals.h", "externs.h", "segment.h", "atomic.h", "gc.c"
-            ,"sort.h", "thread.h", "config.h", "compress-io.h", "itest.c", "nocurses.h", "popcount.h"]
+            ,"sort.h", "thread.h", "config.h", "compress-io.h", "itest.c", "nocurses.h", "popcount.h", "pb.h"]
 
 mainsrc = "main.c"
 
