@@ -17,7 +17,10 @@ data Config = Config
   ,mdldFlags :: [String]
   ,mdlinkFlags :: [String]
   ,exePostStep :: Bool
+  ,exeExtraDeps :: [String]
+  ,exePreStep :: String
   ,zlibConfigureFlags :: [String]
+  ,zlibConfigureEnv :: [String]
   ,cc :: String
   ,cppFlags :: [String]
   ,cFlags :: [String]
@@ -41,6 +44,7 @@ data Config = Config
   ,warningFlags :: [String]
   ,kernel :: String
   ,mdcFlags :: [String]
+  ,exeSuffix :: String
   -- for installation
   ,installBin :: String
   ,installLib :: String

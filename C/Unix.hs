@@ -46,7 +46,7 @@ kernelOTarget :: C.Config -> Int -> Run ()
 kernelOTarget config@C.Config{..} j = withCmdOptions [AddEnv "SCHEMEHEAPDIRS" $ "../boot" </> showMach m] $ do
   mapM_ (buildObj config) $ (mdsrc config):B.kernelsrc -- build kernelobjs
   unless (zlibDep == "") $ do
-    cmd (Cwd "../zlib") (AddEnv "CFLAGS" $ unwords cFlags) ["./configure"]
+    cmd (Cwd "../zlib") (AddEnv "CFLAGS" $ unwords cFlags) Shell $ zlibConfigureEnv ++ ["./configure"] ++ zlibConfigureFlags
     cmd (Cwd "../zlib") ["make", "-j", show j]
   unless (lz4Dep == "") $
     lz4LibTarget config j
@@ -88,9 +88,11 @@ schemeTarget c@C.Config{..} j = do
   kernelTarget c j
   mainTarget c
   -- $C ${mdlinkflags} -o ${Scheme} ${Main} ${Kernel} ${KernelLinkLibs} ${LDFLAGS} ${LIBS}
-  cmd $ [cc] ++ ccFlags c ++ mdlinkFlags ++ ["-o", scheme $ showMach m, main $ showMach m, kernelTmp] ++ kernelLinkLibsTmp ++ ldFlags ++ libs
+  unless (exePreStep == "") $
+    cmd Shell exePreStep
+  cmd $ [cc] ++ ccFlags c ++ mdlinkFlags ++ ["-o", scheme (showMach m) exeSuffix, main $ showMach m, kernelTmp] ++ kernelLinkLibsTmp ++ ldFlags ++ libs
   when exePostStep $
-    cmd ["paxctl", "+m", scheme $ showMach m]
+    cmd ["paxctl", "+m", scheme (showMach m) exeSuffix]
 
 linkeach :: FilePath -> IO ()
 linkeach dir = do
