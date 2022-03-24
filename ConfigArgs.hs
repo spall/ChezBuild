@@ -10,6 +10,7 @@ type Variable = String
 data ConfigArgs = ConfigArgs
   {m :: Maybe Mach -- x
   ,pb :: Bool -- x
+  ,pbarch :: Bool
   ,libs :: [String] -- x
   ,workArea :: String -- x
   ,threads :: Bool -- x
@@ -52,11 +53,28 @@ data ConfigArgs = ConfigArgs
   ,installlz4Target :: Bool -- x
   ,bits :: BITS -- x
   ,libffi :: Bool
+  ,emscripten :: Bool
+  ,emBootFiles :: [String]
+  ,empetite :: Bool
   }
 
   -----------------------------------------------------------------------------------------
 
   -- the flags
+emscriptenFlag :: Flag ConfigArgs
+emscriptenFlag = flagNone ["emscripten"] update "build via emscripten (\"em\" tool prefix)"
+  where update config = config{emscripten = True, cc = "emcc", ld = "emld", ar = "emar"
+                              , ranlib = "emranlib", pb = True, bits = BITS32
+                              , disableIConv = True, disableCurses = True}
+
+embootFlag :: Flag ConfigArgs
+embootFlag = flagReq ["emboot"] update "boot files" "additional boot <file>s with emscripten"
+  where update val config = Right config{emBootFiles=(emBootFiles config) ++ words val}
+
+empetiteFlag :: Flag ConfigArgs
+empetiteFlag = flagNone ["empetite"] update "omit \"scheme.boot\" with emscripten"
+  where update config = config{empetite = True}
+  
 libffiFlag :: Flag ConfigArgs
 libffiFlag = flagNone ["enable-libffi"] update "enable libffi support for pb"
   where update config = config{libffi = True}
@@ -80,6 +98,10 @@ bitsFlag = flagReq ["bits"] update "64 | 32" "specify 32/64-bit version"
   where update "64" config = Right config{bits=BITS64}
         update "32" config = Right config{bits=BITS32}
         update _ config = Left "choose either 32 or 64 bits"
+
+pbarchFlag :: Flag ConfigArgs
+pbarchFlag = flagNone ["pbarch"] update "specify pb with host word and endianness"
+  where update config = config{pbarch = True, pb = True, threads = True}
 
 pbFlag :: Flag ConfigArgs
 pbFlag = flagNone ["pb"] update "specify pb (portable bytecode) version"
@@ -232,4 +254,4 @@ cargs machs ic = (modeEmpty ic)
                                      ,disableCursesFlag, disableIConvFlag, disableAutoFlagsFlag, enableWarningFlagsFlag, libKernelFlag, kernelObjFlag, ccFlag
                                      ,cppFlagsFlag, cFlagsFlag, ldFlag, ldFlagsFlag, arFlag
                                      ,arFlagsFlag, ranLibFlag, windresFlag, zLibFlag, lz4Flag
-                                     ,flagHelpSimple id, libffiFlag]}
+                                     ,flagHelpSimple id, libffiFlag, emscriptenFlag, embootFlag, empetiteFlag]}

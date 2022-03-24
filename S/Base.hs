@@ -28,7 +28,7 @@ basesrc = ["library.ss", "prims.ss", "mathprims.ss", "record.ss", "5_1.ss", "5_2
           ,"date.ss", "7.ss", "cafe.ss", "trace.ss", "engine.ss", "interpret.ss", "cprep.ss"
           ,"cpcheck.ss", "cp0.ss", "cpvalid.ss", "cptypes.ss", "cpcommonize.ss", "cpletrec.ss"
           ,"inspect.ss", "enum.ss", "io.ss", "read.ss", "primvars.ss", "syntax.ss", "costctr.ss"
-          ,"expeditor.ss", "exceptions.ss", "pretty.ss", "env.ss", "fasl.ss", "vfasl.ss", "reloc.ss"
+          ,"expeditor.ss", "exceptions.ss", "pretty.ss", "env.ss", "fasl.ss", "vfasl.ss", "pbchunk.ss", "reloc.ss"
           ,"pdhtml.ss", "strip.ss", "ftype.ss", "back.ss"]
 
 baseobj m = map (-<.> m) basesrc
@@ -49,7 +49,7 @@ macroobj = ["cmacros.so", "priminfo.so", "primvars.so", "env.so", "setup.so"]
 -- to load a new compiler for cross compilation
 patchobj = ["patch.patch", "cpnanopass.patch", "cpprim.patch", "cprep.patch", "cpcheck.patch"
            ,"cp0.patch", "cpvalid.patch", "cptypes.patch", "cpcommonize.patch", "cpletrec.patch"
-           ,"reloc.patch", "compile.patch", "fasl.patch", "vfasl.patch", "syntax.patch", "env.patch"
+           ,"reloc.patch", "compile.patch", "fasl.patch", "vfasl.patch", "pbchunk.patch", "syntax.patch", "env.patch"
            ,"read.patch", "interpret.patch", "ftype.patch", "strip.patch", "ubify.patch", "back.patch"]
 
 
