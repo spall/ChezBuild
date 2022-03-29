@@ -58,11 +58,16 @@ data ConfigArgs = ConfigArgs
   ,empetite :: Bool
   ,mboot :: String
   ,alwaysUseBootFile :: String
+  ,forceWorkArea :: Bool
   }
 
   -----------------------------------------------------------------------------------------
 
   -- the flags
+forceFlag :: Flag ConfigArgs
+forceFlag = flagNone ["force"] update "configure even without boot files"
+  where update config = config{forceWorkArea=True}
+  
 bootFlag :: Flag ConfigArgs
 bootFlag = flagReq ["boot"] update "<machine type>-<tag>" "build from prepared variant (e.g., pbchunk)"
   where update val config = Right config{mboot=val}
@@ -264,4 +269,4 @@ cargs machs ic = (modeEmpty ic)
                                      ,disableCursesFlag, disableIConvFlag, disableAutoFlagsFlag, enableWarningFlagsFlag, libKernelFlag, kernelObjFlag, ccFlag
                                      ,cppFlagsFlag, cFlagsFlag, ldFlag, ldFlagsFlag, arFlag
                                      ,arFlagsFlag, ranLibFlag, windresFlag, zLibFlag, lz4Flag
-                                     ,flagHelpSimple id, libffiFlag, emscriptenFlag, embootFlag, empetiteFlag, bootFlag]}
+                                     ,flagHelpSimple id, libffiFlag, emscriptenFlag, embootFlag, empetiteFlag, bootFlag, forceFlag]}

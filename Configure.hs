@@ -73,6 +73,7 @@ initConfig = do
   -- init values of configArgs fields
   let m = Nothing
       workArea = ""
+      forceWorkArea = False
       threads = True
       pb = False
       pbarch = False
@@ -185,7 +186,9 @@ initConfig = do
 
   liftIO $ ifM (orM [S.doesFileExist ("boot" </> mstr </> "scheme.boot"), S.doesFileExist (srcdir </> "boot" </> mstr </> "scheme.boot")])
     (putStrLn $ "Configuring for " ++ mstr)
-    (do
+    (if forceWorkArea then putStrLn $ "Configuring for " ++ mstr ++ " depsite missing boot files"
+      else
+       (do
         let maybem = case m3 of
                        Nothing -> "<machine type>"
                        Just x -> showMach x
@@ -223,7 +226,7 @@ initConfig = do
             putStrLn "you can try using Racket v7.1 or later with"
         putStrLn $ "  racket rktboot/main.rkt --machine " ++ maybem
         putStrLn "to create the boot files, and then try $0 again."
-        die $ "")
+        die $ ""))
     
   -- 10. if installbin = "" then installbin = installprefix/bin
   let installBin2 = if installBin == "" then installPrefix </> "bin"
