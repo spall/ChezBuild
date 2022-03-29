@@ -120,6 +120,7 @@ initConfig = do
       installlz4Target = True
       srcdir = "."
       libffi = False
+      mboot = ""
       
   let defaultWarningFlags = ["-Wpointer-arith", "-Wall", "-Wextra", "-Wno-implicit-fallthrough"]
   
@@ -171,6 +172,14 @@ initConfig = do
   let m3 = if pbarch then if threads then Just $ PB True (Just bits) pbendian
                           else Just $ PB False (Just bits) pbendian
            else m2
+
+  mboot2 <- if mboot == "" then pure $ maybe "" showMach m3
+            else let magain = head $ splitOn "-" mboot in
+                   if (not $ m3 == read magain)
+                   then liftIO $ die $ "Machine " ++ (maybe "" showMach m3) ++ " is not consistent with boot directory " ++ magain
+                   else pure mboot
+                      
+        
 
   let mstr = maybe "" showMach m3
 
@@ -293,22 +302,27 @@ initConfig = do
                        Just EM -> ["-s", "EXIT_RUNTIME=1", "-s", "ALLOW_MEMORY_GROWTH=1"]
                        Just (Mach _ I3 QNX) -> ["-Wl,--export-dynamic"]
                        _ -> []
-
-  let (exeExtraDeps, exePreStep, mdlinkFlags, alwaysUseBootFile)
-        = case flagsm of
-            Just EM -> let bootfiles = if empetite then ["../boot" </> mstr </> "petite.boot"] ++ emBootFiles
-                                       else ["../boot" </> mstr </> "petite.boot"
-                                            , "../boot" </> mstr </> "scheme.boot"] ++ emBootFiles in
-                         (bootfiles, foldl (\str x -> if str == ""
-                                                      then str ++ "cp " ++ x ++ takeFileName x
-                                                      else str ++ "&& cp " ++ x ++ takeFileName x) "" bootfiles
-                         , foldl (\str x -> str ++ ["--preload-file", takeFileName x]) mdlinkFlags1 bootfiles
-                         , if not $ bootfiles == [] then takeBaseName $ last bootfiles else "")
-                                            
-                                                        
-
+  
+  (exeExtraDeps, exePreStep, mdlinkFlags, alwaysUseBootFile2) <-
+    case flagsm of
+      Just EM -> do
+        bootdir <- liftIO $ ifM (S.doesFileExist ("boot" </> mboot </> "scheme.boot"))
+                   (pure ".") (pure srcdir)
+        mbootfiles <- liftIO $ getDirectoryFilesIO (bootdir </> "boot" </> mboot) ["*.boot"]
               
-            _ -> ([], "", mdlinkFlags1, "")
+        let bootfiles = if empetite then ["../boot" </> mstr </> "petite.boot"] ++ emBootFiles
+                        else ["../boot" </> mstr </> "petite.boot"
+                             , "../boot" </> mstr </> "scheme.boot"] ++ emBootFiles 
+        pure (bootfiles ++ (delete "scheme.boot" $ delete "petite.boot" mbootfiles)
+             , foldl (\str x -> if str == ""
+                                then str ++ "cp " ++ x ++ takeFileName x
+                                else str ++ "&& cp " ++ x ++ takeFileName x) "" bootfiles
+             , foldl (\str x -> str ++ ["--preload-file", takeFileName x]) mdlinkFlags1 bootfiles
+             , if alwaysUseBootFile == "" then if not $ bootfiles == []
+                                               then takeBaseName $ last bootfiles else ""
+               else alwaysUseBootFile)
+
+      _ -> pure ([], "", mdlinkFlags1, "")
 
   let mdldFlags = maybe [] getmdldFlags flagsm
 
@@ -319,15 +333,15 @@ initConfig = do
                            _ -> []
   
   --9. if w = "" then w = m
-  let w = if workArea == "" then if emscripten then "em-" ++ (showMach $ fromJust m3)
-                                 else showMach $ fromJust m3
+  let w = if workArea == "" then if emscripten then "em-" ++ mboot2
+                                 else mboot2
           else workArea
   
 
   let upsrcdir = if isAbsolute srcdir then srcdir else ".." </> srcdir
 
   
-  cmd [srcdir </> "workarea", mstr, w, maybe "" showMach mpbhost]
+  cmd [srcdir </> "workarea", mstr, w, maybe "" showMach mpbhost, mboot2]
 
   -- write to files
   liftIO $ writeFile (w </> "c/next_config.h") $ "#define SCHEME_SCRIPT \"" ++ installScriptName ++ "\""
@@ -343,8 +357,11 @@ initConfig = do
   when (pb && libffi) $
     liftIO $ appendFile (w </> "c/next_config.h") "define ENABLE_LIBFFI"
 
-  when (not $ alwaysUseBootFile == "") $
-    liftIO $ appendFile (w </> "c/next_config.h") $ "#define ALWAYS_USE_BOOT_FILE" ++ "'" ++ alwaysUseBootFile ++ "'"
+  when (not $ alwaysUseBootFile2 == "") $
+    liftIO $ appendFile (w </> "c/next_config.h") $ "#define ALWAYS_USE_BOOT_FILE" ++ "'" ++ alwaysUseBootFile2 ++ "'"
+
+  liftIO $ whenM (S.doesFileExist $ w </> "boot" </> mstr </> "pbchunk_register.c") $
+    appendFile (w </> "c/next_config.h") $ "#define CALL_PBCHUNK_REGISTER 1"
 
   liftIO $ renameFile (w </> "c/next_config.h") (w </> "c/config.h")
 

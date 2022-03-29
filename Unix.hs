@@ -13,6 +13,7 @@ import qualified S.Unix as S.Unix
 import qualified S.Base as S.Base
 import qualified S.Config as S
 import qualified C.Unix as C.Unix
+import C.Base (pbchunksrc)
 import Mach
 import Configure
 import S.Cross
@@ -29,8 +30,10 @@ bootTarget m' o d what C.Config{..} = do
   U.withCurrentDirectory (".." </> "xc-" ++ showMach m' </> "s") $ S.Base.keepbootfiles ("../boot/tmp" </> showMach m') c
 
 bootquick :: Mach -> C.Config -> Int -> Run ()
-bootquick m' config j = do
-  liftIO $ D.withCurrentDirectory "c" $ C.Unix.linkeach (C.upupsrcdir config </> "c") 
+bootquick m' config@C.Config{..} j = do
+  liftIO $ D.withCurrentDirectory "c" $ C.Unix.linkeach (C.upupsrcdir config </> "c")
+  pbs <- liftIO $ pbchunksrc $ showMach $ C.m config
+  liftIO $ D.withCurrentDirectory "c" $ C.Unix.linkList ("../boot" </> showMach m) pbs
   U.withCurrentDirectory "c" $ C.Unix.build config j
   -- $(MAKE) -f Mf-boot $*.boot o=3 d=0 what=all
   liftIO $ putStrLn "building boottarget"
@@ -38,9 +41,11 @@ bootquick m' config j = do
   
 
 build :: C.Config -> Int -> Run ()
-build config j = do
+build config@C.Config{..} j = do
   -- cd c && make
-  liftIO $ D.withCurrentDirectory "c" $ C.Unix.linkeach (C.upupsrcdir config </> "c") 
+  liftIO $ D.withCurrentDirectory "c" $ C.Unix.linkeach (C.upupsrcdir config </> "c")
+  pbs <- liftIO $ pbchunksrc $ showMach $ C.m config
+  liftIO $ D.withCurrentDirectory "c" $ C.Unix.linkList ("../boot" </> showMach m) $ pbs
   U.withCurrentDirectory "c" $ C.Unix.build config j
   -- cd s && make bootstrap
   liftIO $ D.withCurrentDirectory "s" $ C.Unix.linkeach (C.upupsrcdir config </> "s")
