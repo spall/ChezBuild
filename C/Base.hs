@@ -1,7 +1,7 @@
 
 module C.Base(include, cpsrc
              ,kernelsrc, kernelLib, kernelObj,mainsrc,mainObj
-             ,main, scheme, kernel, kernelO) where
+             ,main, scheme, kernel, kernelO, pbchunksrc) where
 
 import System.Directory
 import System.FilePath
@@ -33,7 +33,11 @@ kernelsrc = ["statics.c", "segment.c", "alloc.c", "symbol.c", "intern.c", "gcwra
             ,"stats.c", "foreign.c", "prim.c", "prim5.c", "flushcache.c", "schlib.c", "thread.c"
             ,"expeditor.c", "scheme.c", "compress-io.c", "random.c", "ffi.c"]
 
-kernelObj o mdobj = mdobj ++ map (-<.> o) kernelsrc
+-- IO [FileName]
+pbchunksrc cd m = fmap (map takeFileName) $ getDirectoryFiles (cd </> "../boot" </> m) ["*.c"]
+
+-- IO [FileName]
+kernelObj cd m o mdobj = fmap ((mdobj ++ map (-<.> o) kernelsrc) ++) $ fmap (map (-<.> o)) $ pbchunksrc cd m
 
 kernelHdr = ["system.h", "types.h", "version.h", "globals.h", "externs.h", "segment.h", "atomic.h", "gc.c"
             ,"sort.h", "thread.h", "config.h", "compress-io.h", "itest.c", "nocurses.h", "popcount.h", "pb.h"]

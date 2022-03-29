@@ -56,11 +56,21 @@ data ConfigArgs = ConfigArgs
   ,emscripten :: Bool
   ,emBootFiles :: [String]
   ,empetite :: Bool
+  ,mboot :: String
+  ,alwaysUseBootFile :: String
   }
 
   -----------------------------------------------------------------------------------------
 
   -- the flags
+bootFlag :: Flag ConfigArgs
+bootFlag = flagReq ["boot"] update "<machine type>-<tag>" "build from prepared variant (e.g., pbchunk)"
+  where update val config = Right config{mboot=val}
+
+startFlag :: Flag ConfigArgs
+startFlag = flagReq ["start"] update "<name>" "load <boot>.boot instead of <exe>.boot"
+  where update val config = Right config{alwaysUseBootFile=val}
+  
 emscriptenFlag :: Flag ConfigArgs
 emscriptenFlag = flagNone ["emscripten"] update "build via emscripten (\"em\" tool prefix)"
   where update config = config{emscripten = True, cc = "emcc", ld = "emld", ar = "emar"
@@ -254,4 +264,4 @@ cargs machs ic = (modeEmpty ic)
                                      ,disableCursesFlag, disableIConvFlag, disableAutoFlagsFlag, enableWarningFlagsFlag, libKernelFlag, kernelObjFlag, ccFlag
                                      ,cppFlagsFlag, cFlagsFlag, ldFlag, ldFlagsFlag, arFlag
                                      ,arFlagsFlag, ranLibFlag, windresFlag, zLibFlag, lz4Flag
-                                     ,flagHelpSimple id, libffiFlag, emscriptenFlag, embootFlag, empetiteFlag]}
+                                     ,flagHelpSimple id, libffiFlag, emscriptenFlag, embootFlag, empetiteFlag, bootFlag]}

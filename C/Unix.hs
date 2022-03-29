@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module C.Unix(build, linkeach) where
+module C.Unix(build, linkeach, linkList) where
 
 import qualified System.Directory as D
 import System.Posix.Files
@@ -33,7 +33,8 @@ mdobj C.Config{..} = mdarchsrc <.> "o"
 include m = B.include m
 kernelLib m = B.kernelLib m
 kernelO m = B.kernelO m o
-kernelObj c = B.kernelObj o [mdobj c]
+-- IO 
+kernelObj cd m c = B.kernelObj cd m o [mdobj c]
 mainObj = B.mainObj o
 main m = B.main m o
 scheme m = B.scheme m
@@ -44,18 +45,22 @@ buildObj cd c@C.Config{..} cf = cmd (Cwd cd) $ [cc] ++ ccFlags c ++ ["-c"] ++ md
 
 kernelOTarget :: FilePath -> C.Config -> Int -> Run ()
 kernelOTarget cd config@C.Config{..} j = withCmdOptions [AddEnv "SCHEMEHEAPDIRS" $ "../boot" </> showMach m] $ do
-  mapM_ (buildObj cd config) $ (mdsrc config):B.kernelsrc -- build kernelobjs
+  pbsrc <- liftIO $ B.pbchunksrc cd $ showMach m
+  mapM_ (buildObj cd config) $ (mdsrc config):B.kernelsrc ++ pbsrc -- build kernelobjs
   unless (zlibDep == "") $ do
     cmd (AddEnv "CFLAGS" $ unwords cFlags) (Cwd $ cd </> "../zlib") Shell $ zlibConfigureEnv ++ ["./configure"] ++ zlibConfigureFlags
     cmd (Cwd $ cd </> "../zlib") ["make", "-j", show j]
   unless (lz4Dep == "") $
     lz4LibTarget cd config j
-  cmd (Cwd cd) $ [ld, "-r", "-X"] ++ mdldFlags ++ ["-o", kernelO $ showMach m] ++ (mdsrc config):B.kernelsrc ++ [zlibLib, lz4Lib]
+  kos <- liftIO $ kernelObj cd (showMach m) config
+  cmd (Cwd cd) $ [ld, "-r", "-X"] ++ mdldFlags ++ ["-o", kernelO $ showMach m] ++ kos ++ [zlibLib, lz4Lib]
   
 kernelLibTarget :: FilePath -> C.Config -> Run ()
 kernelLibTarget cd config@C.Config{..} = withCmdOptions [AddEnv "SCHEMEHEAPDIRS" $ "../boot" </> showMach m] $ do
-  mapM_ (buildObj cd config) $ (mdsrc config):B.kernelsrc -- build kernelobjs
-  cmd (Cwd cd) $ [ar] ++ arFlags ++ [kernelLib $ showMach m] ++ (kernelObj config) -- run ar on those object files we just built
+  pbsrc <- liftIO $ B.pbchunksrc cd $ showMach m
+  mapM_ (buildObj cd config) $ (mdsrc config):B.kernelsrc ++ pbsrc -- build kernelobjs
+  kos <- liftIO $ kernelObj cd (showMach m) config
+  cmd (Cwd cd) $ [ar] ++ arFlags ++ [kernelLib $ showMach m] ++ kos -- run ar on those object files we just built
 
 -- choose between KernelLibTarget and KernelOTarget
 kernelTarget :: FilePath -> C.Config -> Int -> Run ()
@@ -99,6 +104,12 @@ linkeach cd dir = do
   let workln src dest = whenM (andM [D.doesFileExist (cd </> src), notM $ D.doesFileExist dest]) $
                         createSymbolicLink src dest
   mapM_ (\x -> workln (dir </> x) (cd </> x)) files
+
+linkList :: FilePath -> FilePath -> [FilePath] -> IO ()
+linkList cd dir ls = do
+  let workln src dest = whenM (andM [D.doesFileExist (cd </> src), notM $ D.doesFileExist dest]) $
+                        createSymbolicLink src dest
+  mapM_ (\x -> workln (dir </> x) (cd </> x)) ls 
 
 -- doit target
 build :: FilePath -> C.Config -> Int -> Run ()
