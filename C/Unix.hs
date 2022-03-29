@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module C.Unix(build, linkeach) where
+module C.Unix(build, linkeach, linkList) where
 
 import qualified System.Directory as D
 import System.Posix.Files
@@ -33,7 +33,8 @@ mdobj C.Config{..} = mdarchsrc <.> "o"
 include m = B.include m
 kernelLib m = B.kernelLib m
 kernelO m = B.kernelO m o
-kernelObj c = B.kernelObj o [mdobj c]
+-- IO 
+kernelObj m c = B.kernelObj m o [mdobj c]
 mainObj = B.mainObj o
 main m = B.main m o
 scheme m = B.scheme m
@@ -44,18 +45,22 @@ buildObj c@C.Config{..} cf = cmd $ [cc] ++ ccFlags c ++ ["-c"] ++ mdcppFlags ++ 
 
 kernelOTarget :: C.Config -> Int -> Run ()
 kernelOTarget config@C.Config{..} j = withCmdOptions [AddEnv "SCHEMEHEAPDIRS" $ "../boot" </> showMach m] $ do
-  mapM_ (buildObj config) $ (mdsrc config):B.kernelsrc -- build kernelobjs
+  pbsrc <- liftIO $ B.pbchunksrc $ showMach m
+  mapM_ (buildObj config) $ (mdsrc config):B.kernelsrc ++ pbsrc -- build kernelobjs
   unless (zlibDep == "") $ do
     cmd (Cwd "../zlib") (AddEnv "CFLAGS" $ unwords cFlags) Shell $ zlibConfigureEnv ++ ["./configure"] ++ zlibConfigureFlags
     cmd (Cwd "../zlib") ["make", "-j", show j]
   unless (lz4Dep == "") $
     lz4LibTarget config j
-  cmd $ [ld, "-r", "-X"] ++ mdldFlags ++ ["-o", kernelO $ showMach m] ++ (mdsrc config):B.kernelsrc ++ [zlibLib, lz4Lib]
+  kos <- liftIO $ kernelObj (showMach m) config
+  cmd $ [ld, "-r", "-X"] ++ mdldFlags ++ ["-o", kernelO $ showMach m] ++ kos ++ [zlibLib, lz4Lib]
   
 kernelLibTarget :: C.Config -> Run ()
 kernelLibTarget config@C.Config{..} = withCmdOptions [AddEnv "SCHEMEHEAPDIRS" $ "../boot" </> showMach m] $ do
-  mapM_ (buildObj config) $ (mdsrc config):B.kernelsrc -- build kernelobjs
-  cmd $ [ar] ++ arFlags ++ [kernelLib $ showMach m] ++ (kernelObj config) -- run ar on those object files we just built
+  pbsrc <- liftIO $ B.pbchunksrc $ showMach m
+  mapM_ (buildObj config) $ (mdsrc config):B.kernelsrc ++ pbsrc -- build kernelobjs
+  kos <- liftIO $ kernelObj (showMach m) config
+  cmd $ [ar] ++ arFlags ++ [kernelLib $ showMach m] ++ kos -- run ar on those object files we just built
 
 -- choose between KernelLibTarget and KernelOTarget
 kernelTarget :: C.Config -> Int -> Run ()
@@ -100,6 +105,12 @@ linkeach dir = do
   let workln src dest = whenM (andM [D.doesFileExist src, notM $ D.doesFileExist dest]) $
                         createSymbolicLink src dest
   mapM_ (\x -> workln (dir </> x) x) files
+
+linkList :: FilePath -> [FilePath] -> IO ()
+linkList dir ls = do
+  let workln src dest = whenM (andM [D.doesFileExist src, notM $ D.doesFileExist dest]) $
+                        createSymbolicLink src dest
+  mapM_ (\x -> workln (dir </> x) x) ls 
 
 -- doit target
 build :: C.Config -> Int -> Run ()
