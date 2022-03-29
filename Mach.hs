@@ -118,7 +118,7 @@ getCFlags optFlags EM = optFlags
 getCFlags optFlags (Mach _ A6 LE) = ["-m64", "-msse2"] ++ optFlags
 getCFlags optFlags (Mach _ A6 NT) = optFlags
 getCFlags optFlags (Mach _ A6 _) = ["-m64"] ++ optFlags
-getCFlags optFlags (Mach _ I3 LE) = ["-m32", "-msse2"] ++ optFlags
+getCFlags optFlags (Mach _ I3 LE) = ["-m32", "-msse2", "-mfpmath=sse"] ++ optFlags
 getCFlags optFlags (Mach _ I3 NT) = optFlags
 getCFlags optFlags (Mach _ I3 QNX) = ["-m32", "-N2048K"] ++ optFlags
 getCFlags optFlags (Mach _ I3 _) = ["-m32"] ++ optFlags
